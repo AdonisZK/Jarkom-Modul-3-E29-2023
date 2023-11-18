@@ -132,7 +132,7 @@ iface eth0 inet static
 	gateway 10.51.4.0
 ```
 
-### - Sein, Stark, Revolte, Richter (Client)
+### -  Revolte, Richter, Sein, Stark (Client)
 ```
 auto eth0
 iface eth0 inet dhcp
