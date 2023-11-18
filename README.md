@@ -10,7 +10,7 @@ Kelompok E29
 # Laporan Resmi
 * [Topologi](#Topologi)
 * [Config](#Config)
-* [Soal (0)](#Soal-(0))
+* [Soal (0)](#Soal-0)
 
 ## Topologi
 ![Cuplikan layar 2023-11-18 230254](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/90591077/a8a2371e-71ac-4f97-a3a0-3557f3877046)
@@ -139,5 +139,5 @@ auto eth0
 iface eth0 inet dhcp
 ```
 
-## Soal (0)
+## Soal 0
 Setelah mengalahkan Demon King, perjalanan berlanjut. Kali ini, kalian diminta untuk melakukan register domain berupa riegel.canyon.yyy.com untuk worker Laravel dan granz.channel.yyy.com untuk worker PHP (0) mengarah pada worker yang memiliki IP [prefix IP].x.1.
