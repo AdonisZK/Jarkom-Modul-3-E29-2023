@@ -11,7 +11,6 @@ Kelompok E29
 * [Topologi](#Topologi)
 * [File GNS3](#File-GNS3)
 * [Config](#Config)
-  * [Aura (DHCP Relay)](#(DHCP-Relay))
 * [Setup](#Setup)
 * [Soal (0)](#Soal-0)
 * [Soal (1)](#Soal-1)
