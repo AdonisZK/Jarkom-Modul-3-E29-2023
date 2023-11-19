@@ -8,8 +8,12 @@ Kelompok E29
 
 
 # Laporan Resmi
+# Laporan Resmi
 * [Topologi](#Topologi)
+* [File GNS3](#File-GNS3)
 * [Config](#Config)
+  * [Aura (DHCP Relay)](#Aura-(DHCP-Relay))
+  * [Himmel (DHCP Server)](#Himmel-(DHCP-Server))
 * [Soal (0)](#Soal-0)
 
 ## Topologi
