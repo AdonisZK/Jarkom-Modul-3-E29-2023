@@ -789,9 +789,361 @@ Akan ada 2 contoh yaitu yang gagal dan berhasil
 ## Soal 13
 Semua data yang diperlukan, diatur pada Denken dan harus dapat diakses oleh Frieren, Flamme, dan Fern.
 ### Script
+#### Denken
+Denken akan melakukan setup sql server
+```
+apt-get update
+apt-get install mariadb-server -y
+service mysql start
+sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/mariadb.conf.d/50-server.cnf
 
+echo '#
+# This group is read both by the client and the server
+# use it for options that affect everything
+[client-server]
+
+# Import all .cnf files from configuration directory
+!includedir /etc/mysql/conf.d/
+!includedir /etc/mysql/mariadb.conf.d/
+
+# Options affecting the MySQL server (mysqld)
+[mysqld]
+skip-networking=0
+skip-bind-address
+' >/etc/mysql/my.cnf
+
+service mysql restart
+
+mysql -u root --password= <~/setup_script.sql
+```
+#### Frieren, Flamme, Fern - Laravel Worker
+```
+echo 'nameserver 10.51.1.2' >/etc/resolv.conf
+apt-get update
+apt-get install mariadb-client -y
+
+apt-get install -y lsb-release ca-certificates apt-transport-https software-properties-common gnupg2
+curl -sSLo /usr/share/keyrings/deb.sury.org-php.gpg https://packages.sury.org/php/apt.gpg
+sh -c 'echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
+apt-get update
+apt-get install php8.0-mbstring php8.0-xml php8.0-cli php8.0-common php8.0-intl php8.0-opcache php8.0-readline php8.0-mysql php8.0-fpm php8.0-curl unzip wget -y
+apt-get install nginx -y
+
+service nginx start
+service php8.0-fpm start
+```
+#### Frieren - Test
+```
+mariadb --host=10.51.2.1 --port=3306 --user=kelompoke29 --password=passworde29 dbkelompoke29 -e "SHOW DATABASES;"
+```
 ### Hasil
+#### Frieren
+![image](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/48209612/2e0712bf-db46-49f8-aed7-d0e2e4abb78c)
 
 ## Soal 14
+Frieren, Flamme, dan Fern memiliki Riegel Channel sesuai dengan quest guide berikut. Jangan lupa melakukan instalasi PHP8.0 dan Composer
 ### Script
+#### Frieren, Flamme, dan Fern - Worker
+```
+wget https://getcomposer.org/download/2.0.13/composer.phar
+chmod +x composer.phar
+mv composer.phar /usr/local/bin/composer
+
+apt-get install git -y
+cd /var/www && git clone https://github.com/martuafernando/laravel-praktikum-jarkom
+cd /var/www/laravel-praktikum-jarkom && composer update
+cd /var/www/laravel-praktikum-jarkom && composer install
+
+cd /var/www/laravel-praktikum-jarkom && cp .env.example .env
+echo 'APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://localhost
+
+LOG_CHANNEL=stack
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=debug
+
+DB_CONNECTION=mysql
+DB_HOST=10.51.2.1
+DB_PORT=3306
+DB_DATABASE=dbkelompoke29
+DB_USERNAME=kelompoke29
+DB_PASSWORD=passworde29
+
+BROADCAST_DRIVER=log
+CACHE_DRIVER=file
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=sync
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+
+MEMCACHED_HOST=127.0.0.1
+
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_USE_PATH_STYLE_ENDPOINT=false
+
+PUSHER_APP_ID=
+PUSHER_APP_KEY=
+PUSHER_APP_SECRET=
+PUSHER_HOST=
+PUSHER_PORT=443
+PUSHER_SCHEME=https
+PUSHER_APP_CLUSTER=mt1
+
+VITE_PUSHER_APP_KEY="${PUSHER_APP_KEY}"
+VITE_PUSHER_HOST="${PUSHER_HOST}"
+VITE_PUSHER_PORT="${PUSHER_PORT}"
+VITE_PUSHER_SCHEME="${PUSHER_SCHEME}"
+VITE_PUSHER_APP_CLUSTER="${PUSHER_APP_CLUSTER}"' >/var/www/laravel-praktikum-jarkom/.env
+cd /var/www/laravel-praktikum-jarkom 
+php artisan key:generate
+php artisan config:cache
+php artisan migrate
+php artisan db:seed
+php artisan storage:link
+php artisan jwt:secret
+php artisan config:clear
+chown -R www-data.www-data /var/www/laravel-praktikum-jarkom/storage
+```
+#### Flamme
+Lakukan setup lagi pada worker kali ini sesuai dengan port pada contoh ini Flamme ``8002``
+```
+apt-get update
+apt-get install nginx
+service nginx start
+service nginx status
+
+echo 'server {
+    listen 8002;
+
+    root /var/www/laravel-praktikum-jarkom/public;
+
+    index index.php index.html index.htm;
+    server_name _;
+
+    location / {
+            try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # pass PHP scripts to FastCGI server
+    location ~ \.php$ {
+      include snippets/fastcgi-php.conf;
+      fastcgi_pass unix:/var/run/php/php8.0-fpm.sock;
+    }
+
+    location ~ /\.ht {
+            deny all;
+    }
+
+    error_log /var/log/nginx/implementasi_error.log;
+    access_log /var/log/nginx/implementasi_access.log;
+}' >/etc/nginx/sites-available/laravel-worker
+
+ln -s /etc/nginx/sites-available/laravel-worker /etc/nginx/sites-enabled
+
+service nginx restart
+nginx -t
+```
+#### Flamme Test
+Lakukan test localhost + port pada contoh ini ``8002``
+```
+apt-get install lynx -y
+lynx localhost:8002
+```
 ### Hasil
+![image](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/48209612/81e4310d-833e-48d1-b8c4-d0c802a10ab7)
+
+## Soal 15
+Riegel Channel memiliki beberapa endpoint yang harus ditesting sebanyak 100 request dengan 10 request/second. Tambahkan response dan hasil testing pada grimoire.
+POST /auth/register 
+### Script
+#### Sein
+Kita akan lakukan test API POST /auth/register pada ``riegel.canyon.e29.com``, disini menggunakan file berisi json untuk mengirim username dan password yang akan diregister pada auth tersebut
+```
+apt-get update && apt-get install apache2-utils -y
+apt-get install apache2-utils -y
+ab -V
+echo '
+{
+  "username": "kelompoke29",
+  "password": "passworde29"
+}' >soal15.json
+
+ab -n 100 -c 10 -p soal15.json -T application/json http://riegel.canyon.e29.com/api/auth/register
+```
+### Hasil
+![image](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/48209612/bfdb3c74-b3ad-4908-aa82-710601e7c6fe)
+
+## Soal 16
+POST /auth/login
+### Script
+#### Sein
+Kita akan lakukan test API POST /auth/login pada ``riegel.canyon.e29.com``,  disini menggunakan file berisi json untuk mengirim username dan password yang akan login pada auth tersebut
+```
+echo '
+{
+  "username": "kelompoke29",
+  "password": "passworde29"
+}' >soal16.json
+
+ab -n 100 -c 10 -p soal16.json -T application/json http://riegel.canyon.e29.com/api/auth/login
+```
+### Hasil
+![image](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/48209612/539e0f0b-8410-4956-9ba7-5bcccb403ff8)
+
+## Soal 17
+GET /me 
+### Script
+#### Sein
+Mengambil token pada API login agar berhasil melakukan auth pada /api/me
+```
+apt-get install jq
+token=$(curl -X POST -H "Content-Type: application/json" -d @soal16.json http://10.51.4.2:8002/api/auth/login | jq -r '.token')
+ab -n 100 -c 10 -H "Authorization: Bearer $token" http://10.51.4.2:8002/api/me
+```
+### Hasil
+![image](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/48209612/06443817-91d7-4dba-a357-be1c243fed98)
+
+## Soal 18
+Untuk memastikan ketiganya bekerja sama secara adil untuk mengatur Riegel Channel maka implementasikan Proxy Bind pada Eisen untuk mengaitkan IP dari Frieren, Flamme, dan Fern.
+### Script
+#### Eisen
+```
+echo 'upstream myweb2 {
+    server 10.51.4.1:8001;
+    server 10.51.4.2:8002;
+    server 10.51.4.3:8003;
+}
+
+server {
+    listen 80;
+    server_name riegel.canyon.e29.com;
+
+    location / {
+        proxy_pass http://myweb2;
+    }
+} 
+' >/etc/nginx/sites-available/laravel-worker
+
+ln -s /etc/nginx/sites-available/laravel-worker /etc/nginx/sites-enabled/laravel-worker
+
+service nginx restart
+nginx -t
+```
+#### Sein
+```
+ab -n 100 -c 10 -p soal16.json -T application/json http://riegel.canyon.e29.com/api/auth/login
+```
+### Hasil
+![image](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/48209612/983b212c-85a0-4562-b091-8d81374f2cb7)
+
+## Soal 19
+Untuk meningkatkan performa dari Worker, coba implementasikan PHP-FPM pada Frieren, Flamme, dan Fern. Untuk testing kinerja naikkan 
+- pm.max_children
+- pm.start_servers
+- pm.min_spare_servers
+- pm.max_spare_servers
+sebanyak tiga percobaan dan lakukan testing sebanyak 100 request dengan 10 request/second kemudian berikan hasil analisisnya pada Grimoire.
+### Script
+#### Frieren, Flamme, Fern - Script 1
+Untuk script 1 akan lengkap dan script lainnya akan dipotong
+```
+echo '[www]
+user = www-data
+group = www-data
+listen = /run/php/php8.0-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 3
+pm.min_spare_servers = 1
+pm.max_spare_servers = 5' > /etc/php/8.0/fpm/pool.d/www.conf
+
+service php8.0-fpm restart
+```
+#### Frieren, Flamme, Fern - Script 2
+```
+pm = dynamic
+pm.max_children = 15
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 10
+```
+#### Frieren, Flamme, Fern - Script 3
+```
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 25
+pm.min_spare_servers = 10
+pm.max_spare_servers = 25
+```
+#### Sein - Test
+```
+ab -n 100 -c 10 -p soal16.json -T application/json http://riegel.canyon.e29.com/api/auth/login
+```
+### Hasil
+#### Script 1
+![image](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/48209612/b450d211-773b-46b1-8aa8-c4ad8f7f3555)
+#### Script 2
+![image](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/48209612/60cfa3f9-45bb-4d98-830c-9de54a69010b)
+#### Script 3
+![image](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/48209612/3758c9d0-6b9e-425b-a8bf-934a802aac45)
+Selengkapnya ada pada griomoire
+
+## Soal 20
+Nampaknya hanya menggunakan PHP-FPM tidak cukup untuk meningkatkan performa dari worker maka implementasikan Least-Conn pada Eisen. Untuk testing kinerja dari worker tersebut dilakukan sebanyak 100 request dengan 10 request/second.
+### Script
+#### Eisen
+```
+echo 'upstream mywe2b {
+    least_conn;
+    server 10.51.4.1:8001;
+    server 10.51.4.2:8002;
+    server 10.51.4.3:8003;
+}
+
+server {
+    listen 80;
+    server_name riegel.canyon.e29.com;
+
+    location / {
+        proxy_pass http://myweb2;
+    }
+} 
+' >/etc/nginx/sites-available/laravel-worker
+
+ln -s /etc/nginx/sites-available/laravel-worker /etc/nginx/sites-enabled/laravel-worker
+
+service nginx restart
+nginx -t
+```
+#### Sein - Test
+```
+ab -n 100 -c 10 -p soal16.json -T application/json http://riegel.canyon.e29.com/api/auth/login
+```
+### Hasil
+![image](https://github.com/AdonisZK/Jarkom-Modul-3-E29-2023/assets/48209612/53c283da-260c-46aa-9b57-fb18a9edfdca)
