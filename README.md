@@ -1063,8 +1063,7 @@ Untuk meningkatkan performa dari Worker, coba implementasikan PHP-FPM pada Frier
 - pm.max_children
 - pm.start_servers
 - pm.min_spare_servers
-- pm.max_spare_servers
-sebanyak tiga percobaan dan lakukan testing sebanyak 100 request dengan 10 request/second kemudian berikan hasil analisisnya pada Grimoire.
+- pm.max_spare_servers. sebanyak tiga percobaan dan lakukan testing sebanyak 100 request dengan 10 request/second kemudian berikan hasil analisisnya pada Grimoire.
 ### Script
 #### Frieren, Flamme, Fern - Script 1
 Untuk script 1 akan lengkap dan script lainnya akan dipotong
